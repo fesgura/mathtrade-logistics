@@ -100,7 +100,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex flex-col items-center justify-center h-dvh bg-gray-100 dark:bg-gray-900 p-4 overflow-hidden">
+    <main className="flex flex-col items-center justify-center min-h-dvh bg-gray-100 dark:bg-gray-900 p-4">
       <div className="w-full max-w-sm p-8 space-y-8 bg-white dark:bg-gray-800 shadow-2xl rounded-xl">
         <h1 className="text-3xl font-bold text-center text-gray-800 dark:text-white">Bienvenido</h1>
         <form onSubmit={handleSubmit} className="space-y-7">

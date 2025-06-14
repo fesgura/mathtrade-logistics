@@ -92,11 +92,11 @@ export default function ReceiveGamesPage() {
   }, [qrData, user, userRole]);
 
   if (isAuthenticated === null || (isAuthenticated === false && typeof window !== 'undefined')) {
-    return <div className="flex justify-center items-center h-dvh overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"><p className="text-lg">Validando...</p></div>;
+    return <div className="flex justify-center items-center min-h-dvh bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"><p className="text-lg">Validando...</p></div>;
   }
 
   return (
-    <main className="container mx-auto p-4 sm:p-6 flex flex-col items-center h-dvh overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <main className="container mx-auto p-4 sm:p-6 flex flex-col items-center min-h-dvh bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {isAuthenticated && (
         <AppHeader
           userName={userName}
