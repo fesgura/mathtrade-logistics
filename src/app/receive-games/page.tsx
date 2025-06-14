@@ -89,10 +89,10 @@ export default function ReceiveGamesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falló la actualización.');
     }
-  }, [qrData, user]);
+  }, [qrData, user, userRole]);
 
   if (isAuthenticated === null || (isAuthenticated === false && typeof window !== 'undefined')) {
-    return <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"><p className="text-lg">Validando...</p></div>;
+    return <div className="flex justify-center items-center h-dvh overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"><p className="text-lg">Validando...</p></div>;
   }
 
   return (
@@ -108,7 +108,7 @@ export default function ReceiveGamesPage() {
           onBackClick={() => router.push('/')}
         />
       )}
-      <div className="w-full max-w-5xl text-center">
+      <div className="w-full max-w-5xl text-center mt-2">
         <div className="my-6 sm:my-8 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-700 dark:text-gray-200">Recibir Juegos</h1>
           <hr className="w-24 sm:w-32 h-1 mx-auto my-2 border-0 rounded bg-secondary-blue dark:bg-sky-500" />

@@ -16,7 +16,7 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="container mx-auto p-4 sm:p-6 flex flex-col items-center min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <main className="container mx-auto p-4 sm:p-6 flex flex-col items-center h-dvh overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {isAuthenticated && (
         <AppHeader
           userName={userName}
@@ -26,16 +26,8 @@ export default function LandingPage() {
           showPanelButton={true}
         />
       )}
-      <div className="w-full max-w-5xl text-center">
 
-
-        <div className="my-10 sm:my-12 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-700 dark:text-gray-200">Mathtrade Logistics</h1>
-          <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">Seleccioná una opción para continuar</p>
-        </div>
-      </div>
-
-      <section className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+      <section className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mt-8">
         <Link href="/receive-games" passHref>
           <div className="flex flex-col items-center justify-center p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer h-full">
             <QrCode size={48} className="text-secondary-blue mb-4" />
