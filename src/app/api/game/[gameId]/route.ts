@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { GameDetails } from '@/types';
+
+type Params = Promise<{ gameId: string }>;
 
 // TODO: Reemplazar mock
 async function findGameInDb(gameId: number): Promise<GameDetails | null> {
@@ -25,10 +27,11 @@ async function findGameInDb(gameId: number): Promise<GameDetails | null> {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { gameId: string } }
+  request: NextRequest,
+  { params }: { params: Params } 
 ) {
-  const gameId = parseInt(params.gameId, 10);
+  const gameId = parseInt((await params).gameId, 10)
+
 
   if (isNaN(gameId)) {
     return NextResponse.json({ message: 'ID de juego inválido.' }, { status: 400 });

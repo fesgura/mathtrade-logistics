@@ -1,8 +1,19 @@
+export interface Trade {
+  from_member: User,
+  to_member: User,
+  math_item_exchanged: Item,
+  result: Result
+
+}
+export interface Result {
+  table_number: number | string;
+  status_display: string;
+}
+
 export interface User {
   id: number;
   first_name: string;
   last_name: string;
-  items: Item[]
 }
 export interface Item {
   id: number;

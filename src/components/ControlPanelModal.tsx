@@ -1,6 +1,6 @@
 "use client";
-
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import { X, Check, XCircle } from 'lucide-react'; 
 import Link from 'next/link'; 
 import { GameDetails } from '@/types';
@@ -21,6 +21,8 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
+  const { isHighContrast, toggleHighContrast } = useAuth();
+
 
   if (!isOpen) return null;
 
@@ -103,6 +105,22 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
             <X size={24} className="text-gray-600 dark:text-gray-400" />
           </button>
         </div>
+
+        <div className="border-t dark:border-gray-700 mt-4 pt-4">
+        <h3 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">Preferencias de Visualización</h3>
+        <label className="flex items-center justify-between cursor-pointer p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+          <span className="text-gray-700 dark:text-gray-300">Modo Alto Contraste</span>
+          <div className="relative">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isHighContrast}
+              onChange={toggleHighContrast}
+            />
+            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white dark:after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary-blue dark:peer-checked:bg-sky-500"></div>
+          </div>
+        </label>
+      </div>
 
         {userRole === 'ADMIN' && (
           <div className="mb-4 border-t border-b border-gray-200 dark:border-gray-700 py-4">

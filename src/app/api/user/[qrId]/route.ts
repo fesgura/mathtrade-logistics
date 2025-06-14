@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import { NextResponse } from 'next/server';
 import path from 'path';
 
-
+type Params = Promise<{ qrId: string }>;
 interface MockGame {
   id: number;
   title: string;
@@ -16,10 +16,10 @@ interface MockDB {
 
 export async function GET(
   request: Request,
-  { params }: { params: { qrId: string } }
+  { params }: { params: Params }
 ) {
 
-  const scannedQrData = params.qrId;
+  const scannedQrData = (await params).qrId;
 
   try {
     //TODO: Cambiar mock por request (numero par devuelve lista vacia, cualquier otra cosa el mock)

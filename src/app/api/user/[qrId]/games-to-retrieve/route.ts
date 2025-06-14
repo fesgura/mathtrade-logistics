@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { Item } from '@/types'; 
 
+type Params = Promise<{ qrId: string }>;
+
 interface UserRetrievingGamesResponse {
   id: string; 
   first_name: string;
@@ -29,12 +31,12 @@ const usersData: Record<string, UserRetrievingGamesResponse> = {
 
 export async function GET(
   request: Request,
-  { params }: { params: { qrId: string } }
+  { params }: { params: Params }
 ) {
 
   //TODO: revertir mock
   // const qrId = params.qrId
-  const qrId = parseInt(params.qrId) % 2 == 0 ? "elaine" : "guybrush";
+  const qrId = parseInt((await params).qrId) % 2 == 0 ? "elaine" : "guybrush";
 
   await new Promise(resolve => setTimeout(resolve, 20)); // Simulo delay
 

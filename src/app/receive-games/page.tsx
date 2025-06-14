@@ -1,6 +1,6 @@
 "use client";
 
-import type { User } from '@/types';
+import type { Trade, User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import AppHeader from '../../components/AppHeader';
@@ -13,7 +13,7 @@ export default function ReceiveGamesPage() {
   const { isAuthenticated, userName, userId, userRole, logout, isLoading: authIsLoading } = useAuth();
 
   const [qrData, setQrData] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [trades, setTrades] = useState<Trade[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -25,13 +25,16 @@ export default function ReceiveGamesPage() {
       setError('');
       setQrData(data);
       try {
-        const response = await fetch(`/api/user/${data}`);
+        const response = await fetch(`http://localhost:8000/api/logistics/user/${data}/games/receive/`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ message: `Error ${response.status}` }));
           throw new Error(errorData.message || `Error ${response.status} al buscar user.`);
         }
-        const userData: User = await response.json();
-        setUser(userData);
+        const tradesData: Trade[] = await response.json();
+        setTrades(tradesData);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -40,7 +43,7 @@ export default function ReceiveGamesPage() {
         }
         setTimeout(() => {
           setQrData(null);
-          setUser(null);
+          setTrades(null);
           setError('');
         }, 3000);
       } finally {
@@ -50,13 +53,13 @@ export default function ReceiveGamesPage() {
   }, [isLoading]);
 
   const handleUpdateItems = useCallback(async (itemIds: number[], deliveredByUserId: number) => {
-    if (!qrData || !user || !deliveredByUserId || itemIds.length === 0) {
+    if (!qrData || !trades || !deliveredByUserId || trades.length === 0) {
       setError('Faltan datos para la actualización.');
       return;
     }
 
-    const itemsToUpdate = user.items.filter(item => itemIds.includes(item.id) && !item.delivered);
-    const idsToUpdate = itemsToUpdate.map(item => item.id);
+    const itemsToUpdate = trades.filter(trade => itemIds.includes(trade.math_item_exchanged.id) && trade.result.status_display != "Delivered");
+    const idsToUpdate = itemsToUpdate.map(trade => trade.math_item_exchanged.id);
     if (idsToUpdate.length === 0) return;
 
     try {
@@ -76,12 +79,12 @@ export default function ReceiveGamesPage() {
         throw new Error(errorData.message || 'Error al actualizar.');
       }
 
-      setUser(prevUser => {
-        if (!prevUser) return null;
+      setTrades(prevTrade => {
+        if (!prevTrade) return null;
         return {
-          ...prevUser,
-          items: prevUser.items.map(item =>
-            itemIds.includes(item.id) ? { ...item, delivered: true } : item
+          ...prevTrade,
+          items: prevTrade.map(trade =>
+            itemIds.includes(trade.math_item_exchanged.id) ? { ...trade, delivered: true } : trade
           ),
         };
       });
@@ -89,14 +92,14 @@ export default function ReceiveGamesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falló la actualización.');
     }
-  }, [qrData, user]);
+  }, [qrData, trades, userRole]);
 
   if (isAuthenticated === null || (isAuthenticated === false && typeof window !== 'undefined')) {
-    return <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"><p className="text-lg">Validando...</p></div>;
+    return <div className="flex justify-center items-center min-h-dvh bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200"><p className="text-lg">Validando...</p></div>;
   }
 
   return (
-    <main className="container mx-auto p-4 sm:p-6 flex flex-col items-center min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <main className="container mx-auto p-4 sm:p-6 flex flex-col items-center min-h-dvh bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {isAuthenticated && (
         <AppHeader
           userName={userName}
@@ -108,7 +111,7 @@ export default function ReceiveGamesPage() {
           onBackClick={() => router.push('/')}
         />
       )}
-      <div className="w-full max-w-5xl text-center">
+      <div className="w-full max-w-5xl text-center mt-2">
         <div className="my-6 sm:my-8 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-700 dark:text-gray-200">Recibir Juegos</h1>
           <hr className="w-24 sm:w-32 h-1 mx-auto my-2 border-0 rounded bg-secondary-blue dark:bg-sky-500" />
@@ -122,11 +125,11 @@ export default function ReceiveGamesPage() {
           <>
             {!qrData ? (
               <QrScanner onScan={handleScan} />
-            ) : user && (
+            ) : trades && (
               <GameList
-                user={user}
+                trades={trades}
                 onUpdateItems={handleUpdateItems}
-                onFinish={() => { setQrData(null); setUser(null); setError(''); }}
+                onFinish={() => { setQrData(null); setTrades(null); setError(''); }}
                 deliveredByUserId={userId ? parseInt(userId, 10) : null}
               />
             )}
