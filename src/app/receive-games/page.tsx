@@ -11,13 +11,13 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function ReceiveGamesPage() {
   const { isAuthenticated, userName, userId, userRole, logout, isLoading: authIsLoading } = useAuth();
-
   const [qrData, setQrData] = useState<string | null>(null);
   const [trades, setTrades] = useState<Trade[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const router = useRouter();
+  const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
 
   const handleScan = useCallback(async (data: string) => {
     if (data && !isLoading) {
@@ -25,7 +25,8 @@ export default function ReceiveGamesPage() {
       setError('');
       setQrData(data);
       try {
-        const response = await fetch(`http://localhost:8000/api/logistics/user/${data}/games/receive/`, {
+        
+        const response = await fetch(`${MT_API_HOST}logistics/user/${data}/games/receive/`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
