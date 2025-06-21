@@ -1,6 +1,7 @@
 "use client";
 
 import type { Trade } from '@/types';
+import { EventPhaseProvider, useEventPhase } from '@/contexts/EventPhaseContext';
 import { QrCode } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -13,9 +14,11 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function ReceiveGamesPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Cargando página..." /></div>}>
-      <ReceiveGamesPageContent />
-    </Suspense>
+    <EventPhaseProvider>
+      <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Cargando página..." /></div>}>
+        <ReceiveGamesPageContent />
+      </Suspense>
+    </EventPhaseProvider>
   );
 }
 
@@ -30,6 +33,7 @@ function ReceiveGamesPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [initialQrProcessed, setInitialQrProcessed] = useState(false);
+  const { eventPhase, isLoadingEventPhase } = useEventPhase();
 
   const handleScan = useCallback(async (data: string) => {
     const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
@@ -135,16 +139,14 @@ function ReceiveGamesPageContent() {
     }
   };
 
-  if (isAuthenticated === null || (isAuthenticated === false && typeof window !== 'undefined')) {
+  const isReceivingEnabled = eventPhase === 1 || eventPhase === 2;
+
+  if (isAuthenticated === null || (isAuthenticated === false && typeof window !== 'undefined') || isLoadingEventPhase) {
     return (
       <div className="flex justify-center items-center min-h-dvh bg-gray-100 dark:bg-gray-900">
         <LoadingSpinner message="Validando..." />
       </div>
     );
-  }
-
-  if (authIsLoading) {
-    return <div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Validando sesión..." /></div>;
   }
 
   return (
@@ -173,7 +175,10 @@ function ReceiveGamesPageContent() {
         {!isLoading && !error && isAuthenticated && (
           <>
             {!qrData ? (
-              <QrScanner onScan={handleScan} />
+              <QrScanner
+                onScan={handleScan}
+                disabled={!isReceivingEnabled}
+                disabledMessage="La recepción de juegos no está habilitada en la fase actual del evento." />
             ) : trades && (
               <GameList
                 trades={trades}

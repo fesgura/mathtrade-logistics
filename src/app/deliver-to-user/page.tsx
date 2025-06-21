@@ -1,5 +1,7 @@
 "use client";
 
+import { EventPhaseProvider } from "@/contexts/EventPhaseContext";
+import { useEventPhase } from "@/contexts/EventPhaseContext";
 import type { Trade } from "@/types";
 import { ArrowRightCircle } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -13,9 +15,11 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function DeliverToUserPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Cargando página..." /></div>}>
-      <DeliverToUserPageContent />
-    </Suspense>
+    <EventPhaseProvider>
+      <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Cargando página..." /></div>}>
+        <DeliverToUserPageContent />
+      </Suspense>
+    </EventPhaseProvider>
   );
 }
 
@@ -30,6 +34,7 @@ function DeliverToUserPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [initialQrProcessed, setInitialQrProcessed] = useState(false);
+  const { eventPhase, isLoadingEventPhase } = useEventPhase();
 
   const handleScan = useCallback(async (data: string) => {
     const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
@@ -103,9 +108,12 @@ function DeliverToUserPageContent() {
     }
   };
 
-  if (authIsLoading || isAuthenticated === null) {
+  if (authIsLoading || isAuthenticated === null || isLoadingEventPhase) {
     return <div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Validando sesión..." /></div>;
   }
+
+
+  const isDeliveringEnabled = eventPhase === 2 || eventPhase === 1;
 
   return (
     <main className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -134,7 +142,11 @@ function DeliverToUserPageContent() {
         {!isLoading && !error && isAuthenticated && (
           <>
             {!qrData ? (
-              <QrScanner onScan={handleScan} />
+              <QrScanner
+                onScan={handleScan} 
+                disabled={!isDeliveringEnabled} 
+                disabledMessage="La entrega de juegos está deshabilitada en la fase actual del evento."
+              />
             ) : trades && (
               <GamesToRetrieveList
                 trades={trades}

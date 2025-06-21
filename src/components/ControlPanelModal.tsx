@@ -1,5 +1,6 @@
 "use client";
 import { useState, FormEvent, useEffect } from 'react';
+import { useEventPhase } from '../contexts/EventPhaseContext';
 import { useAuth } from '../hooks/useAuth';
 import { X, Check, XCircle } from 'lucide-react'; 
 import Link from 'next/link'; 
@@ -22,6 +23,7 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [hasAnyActionSucceededThisSession, setHasAnyActionSucceededThisSession] = useState(false);
+  const { eventPhase } = useEventPhase();
   const { isHighContrast, toggleHighContrast } = useAuth();
 
 
@@ -121,6 +123,9 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
   const canDecreaseStatus = isAdmin == true;
   const currentStatusText = gameDetail ? GameStatusMap[gameDetail.status] || "Desconocido" : "";
 
+  const actionsDisabledByPhase = eventPhase === 0;
+  const phaseDisabledTitle = "Las acciones están deshabilitadas en la fase actual del evento";
+
   const handleModalClose = () => {
     onClose(hasAnyActionSucceededThisSession); 
   };
@@ -210,15 +215,17 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
                     <>
                       <button
                         onClick={() => handleGameAction(gameDetail.assigned_trade_code, 5)}
-                        disabled={isLoading}
+                        disabled={isLoading || actionsDisabledByPhase}
                         className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-md shadow-sm hover:bg-blue-600 disabled:opacity-50 transition-all duration-150 ease-in-out active:scale-95 disabled:active:scale-100"
+                        title={actionsDisabledByPhase ? phaseDisabledTitle : ""}
                       >
                         {isLoading ? 'Procesando...' : 'A "Recibido por Org."'}
                       </button>
                       <button
                         onClick={() => handleGameAction(gameDetail.assigned_trade_code, 6)}
-                        disabled={isLoading}
+                        disabled={isLoading || actionsDisabledByPhase}
                         className="px-4 py-2 bg-accent-green text-white font-semibold rounded-md shadow-sm hover:bg-green-700 disabled:opacity-50 transition-all duration-150 ease-in-out active:scale-95 disabled:active:scale-100"
+                        title={actionsDisabledByPhase ? phaseDisabledTitle : ""}
                       >
                         {isLoading ? 'Procesando...' : 'A "Entregado a Usuario"'}
                       </button>
@@ -228,16 +235,17 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
                     <>
                        <button
                         onClick={() => handleGameAction(gameDetail.assigned_trade_code, 4)}
-                        disabled={isLoading || !canDecreaseStatus}
+                        disabled={isLoading || !canDecreaseStatus || actionsDisabledByPhase}
                         className={`px-4 py-2 font-semibold rounded-md shadow-sm transition-all duration-150 ease-in-out active:scale-95 disabled:active:scale-100 ${canDecreaseStatus ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}`}
-                        title={!canDecreaseStatus ? "Solo administradores pueden retroceder estados" : ""}
+                        title={actionsDisabledByPhase ? phaseDisabledTitle : !canDecreaseStatus ? "Solo administradores pueden retroceder estados" : ""}
                       >
                         {isLoading ? 'Procesando...' : 'A "Pendiente"'}
                       </button>
                       <button
                         onClick={() => handleGameAction(gameDetail.assigned_trade_code, 6)}
-                        disabled={isLoading}
+                        disabled={isLoading || actionsDisabledByPhase}
                         className="px-4 py-2 bg-accent-green text-white font-semibold rounded-md shadow-sm hover:bg-green-700 disabled:opacity-50 transition-all duration-150 ease-in-out active:scale-95 disabled:active:scale-100"
+                        title={actionsDisabledByPhase ? phaseDisabledTitle : ""}
                       >
                         {isLoading ? 'Procesando...' : 'A "Entregado a Usuario"'}
                       </button>
@@ -247,17 +255,17 @@ const ControlPanelModal: React.FC<ControlPanelModalProps> = ({ isOpen, onClose, 
                     <>
                       <button
                         onClick={() => handleGameAction(gameDetail.assigned_trade_code, 4)}
-                        disabled={isLoading || !canDecreaseStatus}
+                        disabled={isLoading || !canDecreaseStatus || actionsDisabledByPhase}
                         className={`px-4 py-2 font-semibold rounded-md shadow-sm transition-all duration-150 ease-in-out active:scale-95 disabled:active:scale-100 ${canDecreaseStatus ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}`}
-                        title={!canDecreaseStatus ? "Solo administradores pueden retroceder estados" : ""}
+                        title={actionsDisabledByPhase ? phaseDisabledTitle : !canDecreaseStatus ? "Solo administradores pueden retroceder estados" : ""}
                       >
                         {isLoading ? 'Procesando...' : 'A "Pendiente"'}
                       </button>
                     <button
                       onClick={() => handleGameAction(gameDetail.assigned_trade_code, 5)}
-                      disabled={isLoading || !canDecreaseStatus}
+                      disabled={isLoading || !canDecreaseStatus || actionsDisabledByPhase}
                       className={`px-4 py-2 font-semibold rounded-md shadow-sm transition-all duration-150 ease-in-out active:scale-95 disabled:active:scale-100 ${canDecreaseStatus ? 'bg-accent-yellow text-gray-800 hover:opacity-85' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}`}
-                      title={!canDecreaseStatus ? "Solo administradores pueden retroceder estados" : ""}
+                      title={actionsDisabledByPhase ? phaseDisabledTitle : !canDecreaseStatus ? "Solo administradores pueden retroceder estados" : ""}
                     >
                       {isLoading ? 'Procesando...' : 'A "Recibido por Org."'}
                     </button>
