@@ -1,55 +1,40 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import AppHeader from '@/components/AppHeader';
-import { LoadingSpinner } from '@/components/ui';
-import { useApi } from '@/hooks/useApi';
-import { useAuth } from '@/hooks/useAuth';
-import { AlertTriangle, Camera, MessageSquare, Package, User as UserIcon } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useMemo } from 'react';
-
-interface Report {
-  reported_user: number | null;
-  item: number | null;
-  images: string | null;
-  comment: string;
-  created: string;
-}
-
-interface UserData {
-  id: number;
-  first_name: string;
-  last_name: string;
-  bgg_user?: string;
-  email?: string;
-}
-
-interface ItemData {
-  id: number;
-  title: string;
-  assigned_trade_code: number;
-}
-
-interface EnrichedReport extends Report {
-  reportedUserData?: UserData;
-  itemData?: ItemData;
-}
+import { FullScreenImageModal, ReportCard } from "@/components/common";
+import AppHeader from "@/components/common/AppHeader";
+import { LoadingSpinner } from "@/components/common/ui";
+import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/hooks/useAuth";
+import { EnrichedReport, Item, Report, UserData } from "@/types/index";
+import { Warning, MagnifyingGlass } from "phosphor-react";
+import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useHapticClick } from "@/hooks/useHapticClick";
+import { triggerHaptic } from "@/utils/haptics";
 
 function AllReportsContent() {
   const { isAdmin, isLoading: authIsLoading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [localReports, setLocalReports] = useState<Report[] | null>(null);
+
+  const handleCloseFullScreen = useHapticClick(() => setFullScreenPhoto(null));
+  const handleImageClick = useHapticClick((imageUrl: string) => setFullScreenPhoto(imageUrl));
+  const handleReportDeleted = useHapticClick((deletedReportId: number) => {
+    if (localReports) {
+      setLocalReports(localReports.filter(report => report.id !== deletedReportId));
+    }
+  });
 
   const { data: reports, isLoading: isLoadingReports, error: reportsError, execute: fetchReports } = useApi<Report[]>('reports/');
-  const { data: users, isLoading: isLoadingUsers, error: usersError, execute: fetchUsers } = useApi<UserData[]>('mathtrades/7/users/');
-  const { data: items, isLoading: isLoadingItems, error: itemsError, execute: fetchItems } = useApi<ItemData[]>('logistics/items/');
+  const { data: items, isLoading: isLoadingItems, error: itemsError, execute: fetchItems } = useApi<Item[]>('logistics/items/');
 
   useEffect(() => {
     fetchReports();
-    fetchUsers();
     fetchItems();
-  }, [fetchReports, fetchUsers, fetchItems]);
+  }, [fetchReports, fetchItems]);
 
   useEffect(() => {
     if (!authIsLoading && (!isAuthenticated || !isAdmin)) {
@@ -57,19 +42,57 @@ function AllReportsContent() {
     }
   }, [isAdmin, authIsLoading, isAuthenticated, router]);
 
-  const usersMap = useMemo(() => new Map(users?.map(u => [u.id, u])), [users]);
+  useEffect(() => {
+    if (reports) {
+      setLocalReports(reports);
+    }
+  }, [reports]);
+
   const itemsMap = useMemo(() => new Map(items?.map(i => [i.id, i])), [items]);
 
   const enrichedReports = useMemo((): EnrichedReport[] => {
-    if (!reports) return [];
-    return reports.map(report => ({
-      ...report,
-      reportedUserData: report.reported_user ? usersMap.get(report.reported_user) : undefined,
-      itemData: report.item ? itemsMap.get(report.item) : undefined,
-    })).reverse();
-  }, [reports, usersMap, itemsMap]);
+    const reportsToUse = localReports || reports;
+    if (!reportsToUse) return [];
 
-  if (authIsLoading || isLoadingReports || isLoadingUsers || isLoadingItems) {
+    const filteredReports = reportsToUse.filter(report => report.reported_user !== null || report.item !== null);
+
+    const allEnriched = filteredReports.map(report => {
+      const enriched: EnrichedReport = {
+        ...report,
+        reportedUserData: report.reported_user ? {
+          id: report.reported_user.id,
+          first_name: report.reported_user.first_name,
+          last_name: report.reported_user.last_name,
+          bgg_user: report.reported_user.bgg_user
+        } : undefined,
+        itemData: report.item ? itemsMap.get(report.item) : undefined,
+      };
+
+      return enriched;
+    }).reverse();
+
+    if (!searchTerm.trim()) {
+      return allEnriched;
+    }
+
+    const normalizedSearchTerm = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    return allEnriched.filter(report => {
+      const reportedUserName = report.reportedUserData ? `${report.reportedUserData.first_name} ${report.reportedUserData.last_name}` : '';
+      const normalizedReportedUserName = reportedUserName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      const itemTitle = report.itemData?.title || '';
+      const normalizedItemTitle = itemTitle.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      const itemCode = report.itemData?.assigned_trade_code.toString() || '';
+
+      return normalizedReportedUserName.includes(normalizedSearchTerm) ||
+        normalizedItemTitle.includes(normalizedSearchTerm) ||
+        itemCode.includes(normalizedSearchTerm);
+    });
+  }, [localReports, reports, itemsMap, searchTerm]);
+
+  if (authIsLoading || isLoadingReports || isLoadingItems) {
     return <div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Cargando reportes..." /></div>;
   }
 
@@ -77,64 +100,56 @@ function AllReportsContent() {
     return <div className="flex justify-center items-center min-h-screen"><LoadingSpinner message="Verificando permisos..." /></div>;
   }
 
-  const error = reportsError || usersError || itemsError;
+  const error = reportsError || itemsError;
   if (error) {
     return <div className="text-center text-red-500 mt-8">Error al cargar los datos: {error}</div>;
   }
 
   return (
-    <main className="flex flex-col items-center min-h-dvh bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      <AppHeader pageTitle="Todos los Reportes" pageIcon={AlertTriangle as any} showBackButton={true} />
-      <section className="w-full max-w-4xl mx-auto p-4 sm:p-6">
+    <main className="flex flex-col min-h-dvh nm-surface text-gray-900 dark:text-gray-100">
+      <AppHeader pageTitle="Todos los Reportes" pageIcon={Warning as any} showBackButton={true} />
+
+      <div className="sticky top-16 z-10 nm-surface border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 pb-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlass className="h-5 w-5 text-gray-400" />
+            </div>
+            <div className=" pl-12 ">
+              <input
+                type="text"
+                placeholder="Buscar por nombre, título de ítem o código..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => triggerHaptic()}
+                className="w-full pr-4 py-3 nm-input"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section className="w-full max-w-4xl mx-auto p-4 sm:p-6 pt-6">
         {enrichedReports.length === 0 ? (
-          <div className="text-center py-16"><p className="text-gray-500 dark:text-gray-400">No hay reportes para mostrar.</p></div>
+          <div className="text-center py-16"><p className="text-gray-500 dark:text-gray-400">{searchTerm ? 'No se encontraron reportes que coincidan con la búsqueda.' : 'No hay reportes para mostrar.'}</p></div>
         ) : (
           <div className="space-y-6">
             {enrichedReports.map((report, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 border border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center">
-                    {report.reportedUserData ? (
-                      <><UserIcon className="w-5 h-5 mr-3 text-orange-500" /><h3 className="font-semibold text-lg">Reporte de Usuario: <span className="font-normal">{report.reportedUserData.first_name} {report.reportedUserData.last_name} {report.reportedUserData.bgg_user && `(${report.reportedUserData.bgg_user})`}</span></h3></>
-                    ) : report.itemData ? (
-                      <><Package className="w-5 h-5 mr-3 text-orange-500" /><h3 className="font-semibold text-lg">Reporte de Ítem: <span className="font-normal">{report.itemData.title} (#{report.itemData.assigned_trade_code})</span></h3></>
-                    ) : (<h3 className="font-semibold text-lg">Reporte General</h3>)}
-                  </div>
-                  {report.created && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-4">
-                      {report.created}
-                    </span>
-                  )}
-                </div>
-
-                <div className="pl-8 space-y-4">
-                  <div className="flex items-start">
-                    <MessageSquare className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400 mt-1 flex-shrink-0" />
-                    <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md w-full">{report.comment}</p>
-                  </div>
-
-                  {report.images && (
-                    <div className="flex items-start">
-                      <Camera className="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400 mt-1 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-medium text-gray-600 dark:text-gray-400 mb-2">Imágenes adjuntas:</h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {report.images.split(',').map((imgUrl, imgIndex) => (
-                            <Link key={imgIndex} href={imgUrl} target="_blank" rel="noopener noreferrer" className="block">
-                              <img src={imgUrl} alt={`Imagen de reporte ${imgIndex + 1}`} className="w-full h-24 object-cover rounded-lg shadow-sm hover:opacity-80 transition-opacity" />
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ReportCard
+                key={report.id}
+                report={report}
+                onImageClick={handleImageClick}
+                onReportDeleted={handleReportDeleted}
+              />
             ))}
           </div>
         )}
       </section>
-    </main>
+      <FullScreenImageModal
+        imageUrl={fullScreenPhoto}
+        onClose={handleCloseFullScreen}
+      />
+    </main >
   );
 }
 
