@@ -55,3 +55,32 @@ export const GameStatusDisplayMap: Record<string, string> = {
 export function getGameStatusText(statusCode: GameStatusCode): string {
   return GameStatusMap[statusCode] || "Desconocido";
 }
+
+export interface Report {
+  reported_user: number | null;
+  item: number | null;
+  images: string | null;
+  comment: string;
+  created: string;
+}
+
+export interface UserData {
+  id: number;
+  first_name: string;
+  last_name: string;
+  bgg_user?: string;
+  email?: string;
+}
+
+export interface ItemData {
+  id: number;
+  title: string;
+  assigned_trade_code: number;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface EnrichedReport extends Report {
+  reportedUserData?: UserData;
+  itemData?: ItemData;
+}
