@@ -10,7 +10,7 @@ import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/hooks/useAuth';
 import type { ReceiveTrade, Trade, TradeResponse, User } from '@/types';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { QrCode } from 'phosphor-react';
+import { QrCode, X } from 'phosphor-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 
 export default function ReceiveGamesPage() {
@@ -34,6 +34,8 @@ function ReceiveGamesPageContent() {
   const [initialQrProcessed, setInitialQrProcessed] = useState(false);
   const { eventPhase, isLoadingEventPhase, eventPhaseDisplay } = useEventPhase();
   const { execute: updateUserStatus } = useApi<any>('logistics/users/update-status/', { method: 'PATCH' });
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [userComment, setUserComment] = useState<string>('');
 
   const handleScan = useCallback(async (data: string) => {
     const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
@@ -68,6 +70,11 @@ function ReceiveGamesPageContent() {
           } catch (statusErr) {
             console.error('Error al actualizar status del usuario:', statusErr);
           }
+        }
+
+        if (tradesData.user && tradesData.user.comment_on_user) {
+          setUserComment(tradesData.user.comment_on_user);
+          setShowCommentModal(true);
         }
       } catch (err) {
         if (err instanceof Error) {
@@ -189,9 +196,51 @@ function ReceiveGamesPageContent() {
                 deliveredByUserId={userId ? parseInt(userId, 10) : null}
               />
             )}
+
+
+
           </>
+
         )}
       </section>
+
+      {showCommentModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="nm-surface rounded-xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <span className="text-yellow-600 dark:text-yellow-400 text-xl">⚠️</span>
+                Advertencia
+              </h3>
+              <button
+                onClick={() => setShowCommentModal(false)}
+                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Cerrar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  {userComment}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowCommentModal(false)}
+                className="px-4 py-2 nm-btn-primary"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
