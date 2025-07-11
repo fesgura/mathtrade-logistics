@@ -67,7 +67,7 @@ function LandingPageContent() {
           title="Reportar"
           description="Reportá un ítem o un usuario."
           titleClassName="text-orange-500 dark:text-orange-400"
-          disabled={false}
+          disabled={!isReceivingEnabled}
           disabledText=""
         />
 

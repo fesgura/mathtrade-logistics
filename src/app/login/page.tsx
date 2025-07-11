@@ -37,6 +37,9 @@ export default function LoginPage() {
     }
   }, [isMounted, RECAPTCHA_SITE_KEY]);
 
+  if (!isMounted) {
+    return null;
+  }
   return (
     <GoogleReCaptchaProvider reCaptchaKey={RECAPTCHA_SITE_KEY || ''} language="es">
       <LoginForm
@@ -64,24 +67,48 @@ export default function LoginPage() {
 function LoginForm({ email, setEmail, password, setPassword, isMounted, isLoading, error, handleLoginApi, RECAPTCHA_SITE_KEY, NEXT_PUBLIC_ENV, contextLogin, router, clearError }: any) {
   const { executeRecaptcha } = useGoogleReCaptcha();
 
+  const [loginError, setLoginError] = useState<string>("");
+
+  const getFriendlyError = (err: any): string => {
+    if (err?.body?.detail) {
+      if (err.body.detail.toLowerCase().includes('bad request')) {
+        return 'Revisa tus credenciales y vuelve a intentar.';
+      }
+      return err.body.detail;
+    }
+    if (err?.detail) {
+      if (typeof err.detail === 'string' && err.detail.toLowerCase().includes('bad request')) {
+        return 'Revisa tus credenciales y vuelve a intentar.';
+      }
+      return err.detail;
+    }
+    if (err?.message) {
+      if (err.message === 'Load failed') return 'No se pudo cargar la información. Verifica tu conexión o intenta más tarde.';
+      if (err.message.toLowerCase().includes('bad request')) return 'Revisa tus credenciales y vuelve a intentar.';
+      return err.message;
+    }
+    return "Ocurrió un error inesperado. Por favor, intenta de nuevo.";
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    triggerHaptic(20); 
+    triggerHaptic(20);
     clearError();
+    setLoginError("");
 
     if (NEXT_PUBLIC_ENV === 'prod') {
       if (!RECAPTCHA_SITE_KEY) {
-        alert('Falta la configuración de reCAPTCHA. Por favor, avise al administrador.');
+        setLoginError('Falta la configuración de reCAPTCHA. Por favor, avise al administrador.');
         return;
       }
       if (!executeRecaptcha) {
-        alert('No se pudo inicializar reCAPTCHA.');
+        setLoginError('No se pudo inicializar reCAPTCHA.');
         return;
       }
       try {
         const recaptchaToken = await executeRecaptcha('sign_in');
         if (!recaptchaToken) {
-          alert('No se pudo obtener el token de reCAPTCHA. Por favor, intente de nuevo.');
+          setLoginError('No se pudo obtener el token de reCAPTCHA. Por favor, intente de nuevo.');
           return;
         }
         const data = await handleLoginApi(email, password, recaptchaToken);
@@ -93,9 +120,14 @@ function LoginForm({ email, setEmail, password, setPassword, isMounted, isLoadin
           if (data.user.id) localStorage.setItem('userId', data.user.id.toString());
           contextLogin(data.token, data.user);
           router.push('/');
+        } else if (data && data.detail) {
+          setLoginError(data.detail);
+        } else {
+          setLoginError("Credenciales incorrectas o usuario no encontrado.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Falló el intento de login:", err);
+        setLoginError(getFriendlyError(err));
       }
     } else {
       try {
@@ -108,9 +140,14 @@ function LoginForm({ email, setEmail, password, setPassword, isMounted, isLoadin
           if (data.user.id) localStorage.setItem('userId', data.user.id.toString());
           contextLogin(data.token, data.user);
           router.push('/');
+        } else if (data && data.detail) {
+          setLoginError(data.detail);
+        } else {
+          setLoginError("Credenciales incorrectas o usuario no encontrado.");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Falló el intento de login:", err);
+        setLoginError(getFriendlyError(err));
       }
     }
   };
@@ -147,9 +184,9 @@ function LoginForm({ email, setEmail, password, setPassword, isMounted, isLoadin
             />
           </div>
 
-          {error && (
+          {(error || loginError) && (
             <p className="text-sm text-red-600 dark:text-red-400 text-center p-3 bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-md">
-              {error}
+              {loginError || error}
             </p>
           )}
 

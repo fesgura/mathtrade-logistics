@@ -69,7 +69,7 @@ function AllReportsContent() {
       };
 
       return enriched;
-    }).reverse();
+    })
 
     if (!searchTerm.trim()) {
       return allEnriched;
