@@ -445,7 +445,7 @@ function ReportsPageContent() {
                   ))}
                 </div>
               )}
-              <button onClick={handleGoToDescribeProblem} disabled={itemPhotos.length === 0} className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg shadow-md transition-all duration-150 ease-in-out active:scale-95 disabled:opacity-50">
+              <button onClick={handleGoToDescribeProblem} className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg shadow-md transition-all duration-150 ease-in-out active:scale-95 disabled:opacity-50">
                 Siguiente
               </button>
             </div>
