@@ -34,34 +34,22 @@ function ReceiveGamesPageContent() {
   const [initialQrProcessed, setInitialQrProcessed] = useState(false);
   const { eventPhase, isLoadingEventPhase, eventPhaseDisplay } = useEventPhase();
   const { execute: updateUserStatus } = useApi<any>('logistics/users/update-status/', { method: 'PATCH' });
+  const { execute: bulkUpdateStatus } = useApi<any>('logistics/games/bulk-update-status/', { method: 'PATCH' });
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [userComment, setUserComment] = useState<string>('');
-
+  const { execute: fetchGames } = useApi<TradeResponse<ReceiveTrade>>('logistics/user/', { method: 'GET' });
   const handleScan = useCallback(async (data: string) => {
-    const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
     if (data && !isLoading) {
       setIsLoading(true);
       setError('');
       setQrData(data);
       try {
-
-        const response = await fetch(`${MT_API_HOST}logistics/user/${data}/games/receive/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `token ${localStorage.getItem('authToken')}`
-          }
-        });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: `Error ${response.status}` }));
-          throw new Error(errorData.message || `Error ${response.status} al buscar user.`);
-        }
-        const tradesData: TradeResponse<ReceiveTrade> = await response.json();
-        const games = tradesData.games;
-        setGames(games);
+        const tradesData = await fetchGames(undefined, `${data}/games/receive/`);
+        if (!tradesData) throw new Error('No se encontraron datos para el usuario.');
+        setGames(tradesData.games);
         setUser(tradesData.user);
 
-        if (games && games.length > 0) {
+        if (tradesData.games && tradesData.games.length > 0) {
           try {
             await updateUserStatus({
               user_id: tradesData.user.id,
@@ -91,7 +79,7 @@ function ReceiveGamesPageContent() {
         setIsLoading(false);
       }
     }
-  }, [isLoading, updateUserStatus]);
+  }, [isLoading, updateUserStatus, fetchGames]);
 
   useEffect(() => {
     if (initialQrProcessed || isLoading || games) return;
@@ -115,23 +103,14 @@ function ReceiveGamesPageContent() {
     if (idsToUpdate.length === 0) return;
 
     try {
-      const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
-      const response = await fetch(`${MT_API_HOST}logistics/games/bulk-update-status/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `token ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({
-          status: 5,
-          assigned_trade_codes: itemIds,
-          change_by_id: deliveredByUserId
-        }),
+      const response = await bulkUpdateStatus({
+        status: 5,
+        assigned_trade_codes: itemIds,
+        change_by_id: deliveredByUserId
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Error al actualizar.' }));
-        throw new Error(errorData.message || 'Error al actualizar.');
+      if (!response) {
+        throw new Error('Error al actualizar.');
       }
 
       const updatedItems = itemsToUpdate.length;
@@ -151,7 +130,7 @@ function ReceiveGamesPageContent() {
       setError(errorMessage);
       setActionError(errorMessage);
     }
-  }, [qrData, games, setSuccess, setActionError]);
+  }, [qrData, games, setSuccess, setActionError, bulkUpdateStatus]);
 
   const isReceivingEnabled = eventPhase !== 0;
 

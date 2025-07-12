@@ -16,7 +16,8 @@ interface GameListProps {
   mode: 'receive' | 'deliver';
 }
 
-const GameList: React.FC<GameListProps> = ({ disabled, trades, onUpdateItems, onFinish, deliveredByUserId, mode, user }) => {
+const GameList: React.FC<GameListProps> = ({ disabled,
+  trades, onUpdateItems, onFinish, deliveredByUserId, mode, user }) => {
   const config = useMemo(() => {
     const receiveConfig = {
       isUnavailable: (trade: Trade) => false,
@@ -72,7 +73,10 @@ const GameList: React.FC<GameListProps> = ({ disabled, trades, onUpdateItems, on
     return mode === 'receive' ? receiveConfig : deliverConfig;
   }, [mode, user]);
 
-  const pendingItems = useMemo(() => trades.filter(config.isPending), [trades, config]);
+  const pendingItems = useMemo(() =>
+    trades.filter(config.isPending)
+      .sort((a, b) => a.result.assigned_trade_code - b.result.assigned_trade_code)
+    , [trades, config]);
   const completedItemsCount = useMemo(() => trades.filter(config.isCompleted).length, [trades, config]);
 
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());

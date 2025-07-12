@@ -32,30 +32,24 @@ function DeliverToUserPageContent() {
   const [initialQrProcessed, setInitialQrProcessed] = useState(false);
   const { eventPhase, isLoadingEventPhase, eventPhaseDisplay } = useEventPhase();
   const { execute: updateUserStatus } = useApi<any>('logistics/users/update-status/', { method: 'PATCH' });
+  const { execute: fetchUserGames } = useApi<TradeResponse<DeliverTrade>>('logistics/user/', { method: 'GET' });
+  const { execute: bulkUpdateStatus } = useApi<any>('logistics/games/bulk-update-status/', { method: 'PATCH' });
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [userComment, setUserComment] = useState<string>('');
 
   const handleScan = useCallback(async (data: string) => {
-    const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
     if (data && !isLoading) {
       setIsLoading(true);
       setError('');
       setQrData(data);
       setGames(null);
       try {
-        const response = await fetch(`${MT_API_HOST}logistics/user/${data}/games/deliver/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `token ${localStorage.getItem('authToken')}`
-          }
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: `Error ${response.status}` }));
-          throw new Error(errorData.message || `Error ${response.status} al buscar datos del usuario.`);
+        const tradesData = await fetchUserGames(undefined, `${data}/games/deliver/`);
+        
+        if (!tradesData) {
+          throw new Error('No se pudieron obtener los datos del usuario.');
         }
-        const tradesData: TradeResponse<DeliverTrade> = await response.json();
+        
         const gamesData = tradesData.games
         const userData = tradesData.user
         setGames(gamesData);
@@ -91,7 +85,7 @@ function DeliverToUserPageContent() {
         setIsLoading(false);
       }
     }
-  }, [isLoading, updateUserStatus]);
+  }, [isLoading, updateUserStatus, fetchUserGames]);
 
   useEffect(() => {
     if (initialQrProcessed || isLoading || games) return;
@@ -126,23 +120,11 @@ function DeliverToUserPageContent() {
     if (idsToUpdate.length === 0) return;
 
     try {
-      const MT_API_HOST = process.env.NEXT_PUBLIC_MT_API_HOST;
-      const response = await fetch(`${MT_API_HOST}logistics/games/bulk-update-status/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `token ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({
-          status: 6,
-          assigned_trade_codes: itemIds,
-          change_by_id: deliveredByUserId
-        }),
+      await bulkUpdateStatus({
+        status: 6,
+        assigned_trade_codes: itemIds,
+        change_by_id: deliveredByUserId
       });
-
-      if (!response.ok) throw new Error('Error al actualizar el estado de los juegos.');
-
-
 
       const allItemsDelivered = itemsToUpdate.every(trade => trade.result.status_display === 'Delivered');
 
@@ -159,7 +141,7 @@ function DeliverToUserPageContent() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falló la actualización.');
     }
-  }, [qrData, games, handleDeliverySuccess, updateUserStatus, user?.id]);
+  }, [qrData, games, handleDeliverySuccess, updateUserStatus, user?.id, bulkUpdateStatus]);
 
   if (authIsLoading || isAuthenticated === null || isLoadingEventPhase) {
     return <div className="flex justify-center items-center min-h-screen nm-surface"><LoadingSpinner message="Validando sesión..." /></div>;

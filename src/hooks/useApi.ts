@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from 'react';
+import { decodeHtmlEntities } from '@/utils/htmlEntities';
 
 interface UseApiOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -69,8 +70,28 @@ export const useApi = <T>(endpoint: string, options: UseApiOptions = { method: '
 
       if (response.status === 204) { setData(null); return undefined; }
       const result: T = await response.json();
-      setData(result);
-      return result;
+      const decodeTitles = (obj: any): any => {
+        if (!obj || typeof obj !== 'object') return obj;
+        
+        if ('title' in obj && typeof obj.title === 'string' && obj.title.includes('&')) {
+          obj.title = decodeHtmlEntities(obj.title);
+        }
+        
+        if (Array.isArray(obj)) {
+          return obj.map(decodeTitles);
+        }
+        
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+            obj[key] = decodeTitles(obj[key]);
+          }
+        }
+        
+        return obj;
+      };
+      const decodedResult = decodeTitles(result);
+      setData(decodedResult);
+      return decodedResult;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
