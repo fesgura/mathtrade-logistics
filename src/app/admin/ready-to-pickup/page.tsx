@@ -135,7 +135,9 @@ export default function ReadyToPickupPage() {
     try {
       setIsRefreshing(true);
 
-      const usersData = await fetchReadyUsers();
+      // include=completed: also who already picked up everything ("Completaron
+      // el retiro"). The TV calls the same endpoint without it.
+      const usersData = await fetchReadyUsers(undefined, '?include=completed');
       const processedUsers = (usersData || [])
         .map(user => ({
           ...user,
@@ -160,7 +162,10 @@ export default function ReadyToPickupPage() {
     try {
       await updateUserStatus({
         user_id: userId,
-        status: newStatus
+        status: newStatus,
+        // Manual admin change: the backend only lets a forced change lower a
+        // status (a rescan in /receive or /deliver never does).
+        force: true
       });
 
       setUsers(prevUsers =>
