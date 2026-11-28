@@ -1,5 +1,5 @@
 import { EVENT_LOCATION_ID } from '@/constants/event';
-import { boxContentsSummary, boxLaneDestination, boxMatchesLane, boxDestinationLabel, boxLabel, destinationLabel, goesViaHub, groupIncomingByOrigin, hasMixedDestinations, hasPendingIncomingItems, isAlreadyDelivered, isPackable, isPendingIncomingItem, boxOnwardDestinations, isTransitBox, splitByRoute, groupPackingDestinations, laneLabel, openBoxSubtitle, openBoxTitle, packerName, packingDestinationId, packingItemSubtitle, VIA_AMBA_DESTINATION_ID, VIA_AMBA_DESTINATION_LABEL } from '@/hooks/boxes/boxGrouping';
+import { boxContentsSummary, boxLaneDestination, boxMatchesLane, boxDestinationLabel, boxLabel, destinationLabel, goesViaHub, groupIncomingByOrigin, hasMixedDestinations, hasPendingIncomingItems, isAlreadyDelivered, isPackable, isPendingIncomingItem, boxOnwardDestinations, isTransitBox, splitByRoute, groupPackingDestinations, laneLabel, missingGamesLabel, openBoxSubtitle, openBoxTitle, packerName, packingDestinationId, packingItemSubtitle, VIA_AMBA_DESTINATION_ID, VIA_AMBA_DESTINATION_LABEL } from '@/hooks/boxes/boxGrouping';
 import type { Box, Item } from '@/types';
 
 const box = (overrides: Partial<Box> & Pick<Box, 'id' | 'origin' | 'origin_name'>): Box => ({
@@ -48,6 +48,33 @@ describe('boxGrouping', () => {
     expect(cordoba.readyCount).toBe(1);
     expect(cordoba.inOpenCount).toBe(1);
     expect(cordoba.closedBoxCount).toBe(0);
+  });
+
+  it('counts per destination the games that have not arrived yet, only at the event', () => {
+    const CORDOBA = 8;
+    const ROSARIO = 9;
+    const item = (id: number, location: number, name: string, status: number): Item => ({
+      id, title: `G${id}`, assigned_trade_code: id, status, location, location_name: name,
+    });
+    const items: Item[] = [
+      item(1, CORDOBA, 'Córdoba', 5),
+      item(2, CORDOBA, 'Córdoba', 2),
+      item(3, CORDOBA, 'Córdoba', 3),
+      item(4, CORDOBA, 'Córdoba', 6),
+      item(5, ROSARIO, 'Rosario', 5),
+      item(6, ROSARIO, 'Rosario', 5),
+    ];
+    const boxes = [box({ id: 50, origin: EVENT_LOCATION_ID, origin_name: 'AMBA', destiny: ROSARIO, destination_name: 'Rosario', closed_at: null, math_items: [items[5]] })];
+
+    const [cordoba, rosario] = groupPackingDestinations(items, boxes, true, EVENT_LOCATION_ID);
+    expect(cordoba.missingCount).toBe(2);
+    expect(rosario.missingCount).toBe(0);
+    expect(missingGamesLabel(cordoba)).toBe('Faltan 2 juegos');
+    expect(missingGamesLabel(rosario)).toBe('Completa');
+    expect(missingGamesLabel({ missingCount: 1 })).toBe('Falta 1 juego');
+
+    const [cityCordoba] = groupPackingDestinations(items, [], false, ROSARIO);
+    expect(cityCordoba.missingCount).toBe(0);
   });
 
   it('packs city via_meeting items into a separate via-AMBA lane from direct AMBA', () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingSpinner } from '@/components/common/ui';
+import { Chip, LoadingSpinner } from '@/components/common/ui';
 import { GameRow, PhaseBlocked, StaffEmpty, StaffError, StaffPage, StaffSearch } from '@/components/staff';
 import { EVENT_LOCATION_ID } from '@/constants/event';
 import { useEventPhase } from '@/contexts/EventPhaseContext';
@@ -14,6 +14,7 @@ import {
   isBoxOpen,
   isIntraLocality,
   matchesSearch,
+  missingGamesLabel,
   packingDestinationId,
   receptorName,
   splitByRoute,
@@ -264,6 +265,9 @@ export default function PackingDestinations({
                     href={`${basePath}/${dest.destinationId}`}
                     title={dest.label}
                     subtitle={`${dest.readyCount} listos · ${dest.inOpenCount} en cajas abiertas · ${dest.closedBoxCount} cerradas`}
+                    trailing={phaseGated ? (
+                      <Chip tone={dest.missingCount === 0 ? 'good' : 'warning'}>{missingGamesLabel(dest)}</Chip>
+                    ) : undefined}
                   />
                 </li>
               ))}

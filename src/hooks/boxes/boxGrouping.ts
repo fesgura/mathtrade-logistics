@@ -338,6 +338,7 @@ export type DestinationGroup = {
   destinationId: number;
   destinationName: string;
   readyCount: number;
+  missingCount: number;
   inOpenCount: number;
   closedBoxCount: number;
   /** Packed from a city, the games travel through the event (AMBA). */
@@ -393,6 +394,7 @@ export function groupPackingDestinations(
       destinationId: destId,
       destinationName: destName,
       readyCount: 0,
+      missingCount: 0,
       inOpenCount: 0,
       closedBoxCount: closedBoxesByDest.get(destId) || 0,
       viaHub: destId === VIA_AMBA_DESTINATION_ID,
@@ -402,6 +404,8 @@ export function groupPackingDestinations(
       current.readyCount += 1;
     } else if (openBoxed.has(item.id)) {
       current.inOpenCount += 1;
+    } else if (requirePackableStatus && !boxed.has(item.id) && isPendingIncomingItem(item)) {
+      current.missingCount += 1;
     }
     map.set(destId, current);
   });
@@ -420,6 +424,7 @@ export function groupPackingDestinations(
           ? VIA_AMBA_DESTINATION_LABEL
           : box.destination_name || `Destino ${box.destiny}`,
       readyCount: 0,
+      missingCount: 0,
       inOpenCount: isBoxOpen(box) ? box.math_items.length : 0,
       closedBoxCount: isBoxOpen(box) ? 0 : 1,
       viaHub: laneId === VIA_AMBA_DESTINATION_ID,
@@ -429,6 +434,11 @@ export function groupPackingDestinations(
   return Array.from(map.values()).sort((a, b) =>
     a.destinationName.localeCompare(b.destinationName),
   );
+}
+
+export function missingGamesLabel({ missingCount }: Pick<DestinationGroup, 'missingCount'>): string {
+  if (missingCount === 0) return 'Completa';
+  return missingCount === 1 ? 'Falta 1 juego' : `Faltan ${missingCount} juegos`;
 }
 
 export function findBoxForTrade(boxes: Box[], tradeId: number): Box | undefined {

@@ -16,6 +16,7 @@ jest.mock('@/components/common/ui', () => ({
   LoadingSpinner: ({ message }: { message?: string }) => (
     <div data-testid="loading-spinner">{message || 'Loading...'}</div>
   ),
+  Chip: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }));
 
 const mockUseAuth = useAuth as jest.Mock;
@@ -146,6 +147,7 @@ describe('Santa Fe group from AMBA', () => {
     expect(screen.getByRole('link', { name: /Santa Fe/ })).toHaveAttribute('href', '/boxes/out/33');
     expect(screen.getAllByRole('link')).toHaveLength(4);
     expect(screen.getAllByText(/1 listos · 0 en cajas abiertas · 0 cerradas/)).toHaveLength(4);
+    expect(screen.getAllByText('Completa')).toHaveLength(4);
     expect(screen.queryByText(/vía/i)).not.toBeInTheDocument();
   });
 
