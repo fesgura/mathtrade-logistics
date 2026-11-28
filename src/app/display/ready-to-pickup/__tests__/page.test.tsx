@@ -10,8 +10,8 @@ let mockCallSlots = 4;
 let mockEventPhase: number | null = 2;
 let mockIsLoadingEventPhase = false;
 
-jest.mock('@/contexts/EventPhaseContext', () => ({
-  useEventPhase: () => ({ eventPhase: mockEventPhase, isLoadingEventPhase: mockIsLoadingEventPhase }),
+jest.mock('@/hooks/usePublicEventPhase', () => ({
+  usePublicEventPhase: () => ({ eventPhase: mockEventPhase, isLoadingEventPhase: mockIsLoadingEventPhase }),
 }));
 
 jest.mock('@/utils/windowStorage', () => ({
@@ -51,9 +51,21 @@ describe('DisplayReadyToPickupPage (TV)', () => {
     usersExecute = jest.fn();
     configExecute = jest.fn();
     mockUseApi.mockImplementation((endpoint: string) => {
-      if (endpoint === 'logistics/users/ready-to-pickup/') return { execute: usersExecute };
+      if (endpoint === 'logistics/display/ready-to-pickup/') return { execute: usersExecute };
       return { execute: configExecute };
     });
+  });
+
+  it('lee solo endpoints públicos, sin login', async () => {
+    serverHas([], []);
+    render(<DisplayReadyToPickupPage />);
+    await act(async () => {});
+    const calls = mockUseApi.mock.calls.map(([endpoint, options]) => [endpoint, options?.isPublic]);
+    expect(calls).toEqual(expect.arrayContaining([
+      ['logistics/display/ready-to-pickup/', true],
+      ['logistics/display/window-config/', true],
+    ]));
+    expect(calls.every(([endpoint]) => String(endpoint).startsWith('logistics/display/'))).toBe(true);
   });
 
   it('un listo con mesa sin ventanilla aparece en la tarjeta "Sin ventanilla"', async () => {
@@ -159,7 +171,7 @@ describe('DisplayReadyToPickupPage polling', () => {
     fetchUsers = jest.fn(() => new Promise((resolve) => { resolvers.push(resolve as (v: unknown[]) => void); }));
     fetchConfig = jest.fn().mockResolvedValue([]);
     mockUseApi.mockImplementation((endpoint: string) => ({
-      execute: endpoint === 'logistics/users/ready-to-pickup/' ? fetchUsers : fetchConfig,
+      execute: endpoint === 'logistics/display/ready-to-pickup/' ? fetchUsers : fetchConfig,
     }));
   });
 
@@ -213,7 +225,7 @@ describe('DisplayReadyToPickupPage con cola activa', () => {
     usersExecute = jest.fn();
     configExecute = jest.fn();
     mockUseApi.mockImplementation((endpoint: string) => {
-      if (endpoint === 'logistics/users/ready-to-pickup/') return { execute: usersExecute };
+      if (endpoint === 'logistics/display/ready-to-pickup/') return { execute: usersExecute };
       return { execute: configExecute };
     });
   });
@@ -336,7 +348,7 @@ describe('DisplayReadyToPickupPage cola activa con polling', () => {
     fetchUsers = jest.fn();
     const fetchConfig = jest.fn().mockResolvedValue([]);
     mockUseApi.mockImplementation((endpoint: string) => ({
-      execute: endpoint === 'logistics/users/ready-to-pickup/' ? fetchUsers : fetchConfig,
+      execute: endpoint === 'logistics/display/ready-to-pickup/' ? fetchUsers : fetchConfig,
     }));
   });
 
@@ -414,7 +426,7 @@ describe('DisplayReadyToPickupPage segun la fase del evento', () => {
     fetchUsers = jest.fn().mockResolvedValue(users);
     fetchConfig = jest.fn().mockResolvedValue([]);
     mockUseApi.mockImplementation((endpoint: string) => ({
-      execute: endpoint === 'logistics/users/ready-to-pickup/' ? fetchUsers : fetchConfig,
+      execute: endpoint === 'logistics/display/ready-to-pickup/' ? fetchUsers : fetchConfig,
     }));
   });
 

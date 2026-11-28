@@ -1,6 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import { isPublicPath } from '@/config/nav';
 import { ROLES } from '@/config/roles';
 import { CITY_VIEW_STORAGE_KEY } from '@/config/sessionKeys';
 import { useApi } from '@/hooks/useApi';
@@ -205,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRoleKnown(false);
       setReferrer(null);
       setLocalCity(null);
-      if (pathname !== '/login') {
+      if (pathname !== '/login' && !isPublicPath(pathname)) {
         router.push('/login');
       }
     }

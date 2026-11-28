@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { LoadingSpinner } from '@/components/common/ui';
 import CallQueue, { displayName } from '@/components/display/CallQueue';
 import ReceptionMessage from '@/components/display/ReceptionMessage';
-import { useEventPhase } from '@/contexts/EventPhaseContext';
 import { useApi } from '@/hooks/useApi';
+import { usePublicEventPhase } from '@/hooks/usePublicEventPhase';
 import type { ProcessedUserWithWindow, UserWithWindow, WindowConfig, WindowDisplay } from '@/types/window';
 import { callQueue } from '@/utils/callQueue';
 import { getCallSlots, getGlobalPollingInterval, getMaxUsersForWindow, getQueueMode } from '@/utils/windowStorage';
@@ -43,7 +43,7 @@ export default function DisplayReadyToPickupPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pollingInterval, setPollingInterval] = useState(10);
   const [queueMode] = useState(() => getQueueMode());
-  const { eventPhase, isLoadingEventPhase } = useEventPhase();
+  const { eventPhase, isLoadingEventPhase } = usePublicEventPhase();
   const showReception = queueMode && eventPhase === 1;
   const pollingPaused = showReception || (queueMode && eventPhase === null && isLoadingEventPhase);
   const [callSlots] = useState(() => getCallSlots());
@@ -51,8 +51,8 @@ export default function DisplayReadyToPickupPage() {
   // True while a poll is running: a slow network must not stack requests.
   const inFlight = useRef(false);
 
-  const { execute: fetchReadyUsers } = useApi<UserWithWindow[]>('logistics/users/ready-to-pickup/', { method: 'GET' });
-  const { execute: fetchWindowConfig } = useApi<WindowConfig[]>('logistics/windows/config/', { method: 'GET' });
+  const { execute: fetchReadyUsers } = useApi<UserWithWindow[]>('logistics/display/ready-to-pickup/', { method: 'GET', isPublic: true });
+  const { execute: fetchWindowConfig } = useApi<WindowConfig[]>('logistics/display/window-config/', { method: 'GET', isPublic: true });
 
   const organizeUsersByWindows = useCallback((users: ProcessedUserWithWindow[], config: WindowConfig[]): WindowDisplay[] => {
     const windowMap = new Map<string, WindowDisplay>();

@@ -4,10 +4,11 @@ import { AuthProvider, useAuth } from '../useAuth';
 
 const mockPush = jest.fn();
 const mockRouter = { push: mockPush, replace: jest.fn() };
+let mockPathname = '/more';
 
 jest.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
-  usePathname: () => '/more',
+  usePathname: () => mockPathname,
 }));
 jest.mock('@sentry/nextjs', () => ({ setUser: jest.fn() }));
 
@@ -34,6 +35,31 @@ const meResponse = (body: Record<string, unknown>, status = 200) => ({
 
 const me = (role: string | null, mathAdmin = false) =>
   meResponse({ id: 1, first_name: 'Ana', last_name: 'G', math_admin: mathAdmin, is_volunteer: true, role });
+
+describe('useAuth without a session', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    mockPathname = '/more';
+  });
+
+  it('sends a staff screen to the login', async () => {
+    mockPathname = '/more';
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/login'));
+  });
+
+  it('leaves the public TV screen open', async () => {
+    mockPathname = '/display/ready-to-pickup';
+    render(<AuthProvider><Probe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('false'));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+});
 
 describe('useAuth refreshMe', () => {
   let fetchMock: jest.Mock;

@@ -12,6 +12,10 @@ export type NavSlot = {
   disabled?: boolean;
 };
 
+export function isPublicPath(pathname: string | null): boolean {
+  return !!pathname && pathname.startsWith('/display');
+}
+
 export function isBarePath(pathname: string | null): boolean {
   if (!pathname) return true;
   return pathname === '/login' || pathname.startsWith('/display');
