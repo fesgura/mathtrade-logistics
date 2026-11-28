@@ -6,7 +6,7 @@ import { useStaffTitle } from '@/components/staff/StaffTitleContext';
 import { EVENT_LOCATION_ID } from '@/constants/event';
 import { useEventPhase } from '@/contexts/EventPhaseContext';
 import { listBoxes } from '@/hooks/boxes/boxApi';
-import { boxOnwardDestinations, hasMixedDestinations, hasPendingIncomingItems, isTransitBox } from '@/hooks/boxes/boxGrouping';
+import { boxOnwardDestinations, hasMixedDestinations, hasPendingIncomingItems, isPendingIncomingItem, isTransitBox } from '@/hooks/boxes/boxGrouping';
 import { useAuth } from '@/hooks/useAuth';
 import type { Box } from '@/types';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -20,7 +20,7 @@ function boxLabel(box: Box): string {
 
 function transitSubtitle(box: Box): string {
   const destinations = boxOnwardDestinations(box);
-  const pendingCount = box.math_items.filter((item) => item.status !== 5 && item.status !== 6).length;
+  const pendingCount = box.math_items.filter(isPendingIncomingItem).length;
   if (hasMixedDestinations(box)) {
     const destList = destinations.join(', ');
     return [
@@ -149,7 +149,7 @@ function BoxesInOriginPageContent() {
                 <GameRow
                   href={`/boxes/in/${originId}/${box.id}`}
                   title={boxLabel(box)}
-                  subtitle={`${box.math_items.filter((item) => item.status !== 5 && item.status !== 6).length} pendientes`}
+                  subtitle={`${box.math_items.filter(isPendingIncomingItem).length} pendientes`}
                 />
               )}
             </li>

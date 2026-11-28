@@ -65,7 +65,7 @@ export type GameStatusCode = 1 | 2 | 3 | 4 | 5 | 6;
 export const GameStatusMap: Record<GameStatusCode, string> = {
   1: "Creado",
   2: "En viaje al evento",
-  3: "En viaje de vuelta",
+  3: "En evento (en caja)",
   4: "En viaje directo",
   5: "En evento",
   6: "Entregado a Usuario",
@@ -73,7 +73,7 @@ export const GameStatusMap: Record<GameStatusCode, string> = {
 export const GameStatusDisplayMap: Record<string, string> = {
   "Created": "Creado",
   "Transit to Event": "En viaje al evento",
-  "Transit Back": "En viaje de vuelta",
+  "Transit Back": "En evento (en caja)",
   "Transit Direct": "En viaje directo",
   "In Event": "En evento",
   "Delivered": "Entregado a Usuario",

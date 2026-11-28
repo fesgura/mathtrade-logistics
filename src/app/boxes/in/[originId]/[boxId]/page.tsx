@@ -6,7 +6,7 @@ import { useStaffTitle } from '@/components/staff/StaffTitleContext';
 import { EVENT_LOCATION_ID } from '@/constants/event';
 import { useEventPhase } from '@/contexts/EventPhaseContext';
 import { getBox, markItemsReceived } from '@/hooks/boxes/boxApi';
-import { boxOnwardDestinations, hasMixedDestinations, isBoxOpen, isTransitBox, receptorName } from '@/hooks/boxes/boxGrouping';
+import { boxOnwardDestinations, hasMixedDestinations, isBoxOpen, isPendingIncomingItem, isTransitBox, receptorName } from '@/hooks/boxes/boxGrouping';
 import { useBoxLifecycle } from '@/hooks/boxes/useBoxLifecycle';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,11 +74,11 @@ export default function IncomingBoxPage() {
   }, [isAuthenticated, eventPhase, load]);
 
   const pending = useMemo(
-    () => (box?.math_items || []).filter((item) => item.status !== 5 && item.status !== 6),
+    () => (box?.math_items || []).filter(isPendingIncomingItem),
     [box],
   );
   const received = useMemo(
-    () => (box?.math_items || []).filter((item) => item.status === 5 || item.status === 6),
+    () => (box?.math_items || []).filter((item) => !isPendingIncomingItem(item)),
     [box],
   );
 

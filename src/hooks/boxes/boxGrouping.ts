@@ -22,11 +22,16 @@ export const DELIVERED_STATUS = 6;
 /** Trade status of a game received at the event (AMBA). */
 export const RECEIVED_STATUS = 5;
 
+export const PACKED_AT_EVENT_STATUS = 3;
+
 export const isAlreadyDelivered = (item: { status?: number }): boolean => item.status === DELIVERED_STATUS;
+
+export const isReceivedAtEvent = (item: { status?: number }): boolean =>
+  item.status === RECEIVED_STATUS || item.status === PACKED_AT_EVENT_STATUS;
 
 /** A game that still has to arrive: not received (5) nor delivered (6). */
 export const isPendingIncomingItem = (item: { status?: number }): boolean =>
-  item.status !== RECEIVED_STATUS && item.status !== DELIVERED_STATUS;
+  !isReceivedAtEvent(item) && !isAlreadyDelivered(item);
 
 export function hasPendingIncomingItems(box: Box): boolean {
   return box.math_items.some(isPendingIncomingItem);

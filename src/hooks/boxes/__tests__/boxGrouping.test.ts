@@ -59,7 +59,8 @@ describe('boxGrouping', () => {
     const items: Item[] = [
       item(1, CORDOBA, 'Córdoba', 5),
       item(2, CORDOBA, 'Córdoba', 2),
-      item(3, CORDOBA, 'Córdoba', 3),
+      item(3, CORDOBA, 'Córdoba', 4),
+      item(7, CORDOBA, 'Córdoba', 3),
       item(4, CORDOBA, 'Córdoba', 6),
       item(5, ROSARIO, 'Rosario', 5),
       item(6, ROSARIO, 'Rosario', 5),
@@ -345,6 +346,7 @@ describe('boxGrouping', () => {
       expect(isPendingIncomingItem(it5)).toBe(false);
       expect(isPendingIncomingItem(it6)).toBe(false);
       expect(isPendingIncomingItem(it1)).toBe(true);
+      expect(isPendingIncomingItem({ status: 3 })).toBe(false);
       const box = { math_items: [it5, it6] } as unknown as Box;
       expect(hasPendingIncomingItems(box)).toBe(false);
       expect(hasPendingIncomingItems({ math_items: [it5, it1] } as unknown as Box)).toBe(true);

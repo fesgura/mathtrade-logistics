@@ -221,6 +221,17 @@ describe('GameList', () => {
       expect(screen.getByRole('button', { name: /Todo entregado. Siguiente QR/i })).toBeInTheDocument();
     });
 
+    it('counts a dropped-off game already packed in a box (Transit Back) as received', () => {
+      const packed = [{
+        result: { assigned_trade_code: 301, status_display: 'Transit Back', table_number: 'A1' },
+        math_item_exchanged: { title: 'Juego empacado' },
+        to_member: { first_name: 'Juan', last_name: 'Perez' },
+      } as unknown as Trade];
+      render(<GameList user={mockUser} trades={packed} onUpdateItems={mockOnUpdateItems} onFinish={mockOnFinish} deliveredByUserId={1} mode="receive" />);
+      expect(screen.getByRole('button', { name: /Todo recibido. Siguiente QR/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Recibir TODO lo pendiente/i })).not.toBeInTheDocument();
+    });
+
     describe('games that have not arrived yet (deliver mode)', () => {
       const withStatus = (statuses: string[]) =>
         statuses.map((status_display, i) => ({

@@ -7,7 +7,7 @@ import { EVENT_LOCATION_ID } from '@/constants/event';
 import { useActionStatus } from '@/contexts/ActionStatusContext';
 import { resolveCodeToAdd, summarizeAdd, type AddSummary } from '@/hooks/boxes/addByCode';
 import { addItem as addItemApi, listBoxes, listItems, markItemsReceived } from '@/hooks/boxes/boxApi';
-import { boxLaneDestination, findBoxForTrade, isBoxOpen, receptorName } from '@/hooks/boxes/boxGrouping';
+import { boxLaneDestination, findBoxForTrade, isBoxOpen, isPendingIncomingItem, receptorName } from '@/hooks/boxes/boxGrouping';
 import { boxErrorMessage, useBoxLifecycle } from '@/hooks/boxes/useBoxLifecycle';
 import { useApi } from '@/hooks/useApi';
 import type { Box, BoxEventRow, HistoryResponse, Item } from '@/types';
@@ -265,7 +265,7 @@ export default function TransitBoxView({
                   </div>
                   {canMutate && (
                     <div className="flex flex-col gap-3">
-                      {item.status !== 5 && item.status !== 6 && (
+                      {isPendingIncomingItem(item) && (
                         <button
                           type="button"
                           disabled={inFlight || receivingCode != null}

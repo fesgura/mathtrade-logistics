@@ -21,13 +21,16 @@ interface GameListProps {
   mode: 'receive' | 'deliver';
 }
 
+const RECEIVED_DISPLAYS = ['Delivered', 'In Event', 'Transit Back'];
+const isReceived = (status: string) => RECEIVED_DISPLAYS.includes(status);
+
 const GameList: React.FC<GameListProps> = ({ disabled, isUpdating = false, trades, onUpdateItems, onFinish, deliveredByUserId, mode, user }) => {
   const config = useMemo(() => {
     const receiveConfig = {
       isUnavailable: (trade: Trade) => false,
-      isPending: (trade: Trade) => !['Delivered', 'In Event'].includes(trade.result.status_display),
-      isCompleted: (trade: Trade) => ['Delivered', 'In Event'].includes(trade.result.status_display),
-      isSelectable: (trade: Trade) => !['Delivered', 'In Event'].includes(trade.result.status_display),
+      isPending: (trade: Trade) => !isReceived(trade.result.status_display),
+      isCompleted: (trade: Trade) => isReceived(trade.result.status_display),
+      isSelectable: (trade: Trade) => !isReceived(trade.result.status_display),
       texts: {
         pendingSingular: 'juego pendiente',
         pendingPlural: 'juegos pendientes',
@@ -42,7 +45,7 @@ const GameList: React.FC<GameListProps> = ({ disabled, isUpdating = false, trade
         disabledMessage: 'La recepción de juegos está deshabilitada en la fase actual del evento',
       },
       itemSortOrder: (status: string) => {
-        if (['Delivered', 'In Event'].includes(status)) return 2;
+        if (isReceived(status)) return 2;
         return 1;
       },
     };

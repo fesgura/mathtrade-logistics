@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { EVENT_LOCATION_ID } from '@/constants/event';
 import { useEventPhase } from '@/contexts/EventPhaseContext';
 import { listBoxes, listItems } from '@/hooks/boxes/boxApi';
-import { groupIncomingByOrigin, hasMixedDestinations, hasPendingIncomingItems, isTransitBox, matchesSearch } from '@/hooks/boxes/boxGrouping';
+import { groupIncomingByOrigin, hasMixedDestinations, hasPendingIncomingItems, isPendingIncomingItem, isTransitBox, matchesSearch } from '@/hooks/boxes/boxGrouping';
 import { useAuth } from '@/hooks/useAuth';
 import type { Box, Item } from '@/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -28,7 +28,7 @@ function transitOrigins(items: Item[], boxes: Box[]) {
     current.boxCount += 1;
     if (hasMixedDestinations(box)) current.mixedCount += 1;
     box.math_items.forEach((item) => {
-      if (item.status !== 5 && item.status !== 6) {
+      if (isPendingIncomingItem(item)) {
         current.itemCount += 1;
         countedItemIds.add(item.id);
       }
@@ -40,7 +40,7 @@ function transitOrigins(items: Item[], boxes: Box[]) {
     if (!item.origin_location || item.origin_location === EVENT_LOCATION_ID) return;
     if (!item.location || item.location === EVENT_LOCATION_ID) return;
     if (item.origin_location === item.location) return;
-    if (item.status === 5 || item.status === 6) return;
+    if (!isPendingIncomingItem(item)) return;
     if (countedItemIds.has(item.id)) return;
     const current = map.get(item.origin_location) || {
       originId: item.origin_location,

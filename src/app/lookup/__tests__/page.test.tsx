@@ -578,7 +578,7 @@ describe('LookupPage', () => {
 
       expect(await screen.findByText('En caja #COR-3 · AMBA → Córdoba · cerrada')).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /En caja/ })).not.toBeInTheDocument();
-      expect(screen.getByText('00303 · Mesa 7 · En viaje de vuelta')).toBeInTheDocument();
+      expect(screen.getByText('00303 · Mesa 7 · En evento (en caja)')).toBeInTheDocument();
     });
 
     it('names an unnumbered box "en armado"', async () => {
@@ -637,7 +637,7 @@ describe('LookupPage', () => {
       expect(await screen.findByRole('link', { name: 'En caja #12 · Santa Fe → AMBA · abierta' })).toHaveAttribute('href', '/boxes/in/4/31');
       expect(screen.getByText('En caja #COR-3 · AMBA → Córdoba · cerrada')).toBeInTheDocument();
       expect(screen.getByText('00101 · Mesa 4 · En viaje al evento')).toBeInTheDocument();
-      expect(screen.getByText('00202 · Mesa B · En viaje de vuelta')).toBeInTheDocument();
+      expect(screen.getByText('00202 · Mesa B · En evento (en caja)')).toBeInTheDocument();
     });
 
     it('shows no box line for participant games without box', async () => {
