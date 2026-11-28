@@ -53,8 +53,9 @@ describe('boxGrouping', () => {
   it('counts per destination the games that have not arrived yet, only at the event', () => {
     const CORDOBA = 8;
     const ROSARIO = 9;
-    const item = (id: number, location: number, name: string, status: number): Item => ({
+    const item = (id: number, location: number, name: string, status: number, extra: Partial<Item> = {}): Item => ({
       id, title: `G${id}`, assigned_trade_code: id, status, location, location_name: name,
+      origin_location: EVENT_LOCATION_ID, ...extra,
     });
     const items: Item[] = [
       item(1, CORDOBA, 'Córdoba', 5),
@@ -64,13 +65,16 @@ describe('boxGrouping', () => {
       item(4, CORDOBA, 'Córdoba', 6),
       item(5, ROSARIO, 'Rosario', 5),
       item(6, ROSARIO, 'Rosario', 5),
+      item(8, CORDOBA, 'Córdoba', 4, { origin_location: ROSARIO }),
+      item(9, CORDOBA, 'Córdoba', 1, { origin_location: ROSARIO }),
+      item(10, CORDOBA, 'Córdoba', 2, { origin_location: ROSARIO, via_meeting: true }),
     ];
     const boxes = [box({ id: 50, origin: EVENT_LOCATION_ID, origin_name: 'AMBA', destiny: ROSARIO, destination_name: 'Rosario', closed_at: null, math_items: [items[5]] })];
 
     const [cordoba, rosario] = groupPackingDestinations(items, boxes, true, EVENT_LOCATION_ID);
-    expect(cordoba.missingCount).toBe(2);
+    expect(cordoba.missingCount).toBe(3);
     expect(rosario.missingCount).toBe(0);
-    expect(missingGamesLabel(cordoba)).toBe('Faltan 2 juegos');
+    expect(missingGamesLabel(cordoba)).toBe('Faltan 3 juegos');
     expect(missingGamesLabel(rosario)).toBe('Completa');
     expect(missingGamesLabel({ missingCount: 1 })).toBe('Falta 1 juego');
 

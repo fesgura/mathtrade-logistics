@@ -409,7 +409,7 @@ export function groupPackingDestinations(
       current.readyCount += 1;
     } else if (openBoxed.has(item.id)) {
       current.inOpenCount += 1;
-    } else if (requirePackableStatus && !boxed.has(item.id) && isPendingIncomingItem(item)) {
+    } else if (requirePackableStatus && !boxed.has(item.id) && isPendingIncomingItem(item) && arrivesAtHub(item)) {
       current.missingCount += 1;
     }
     map.set(destId, current);
@@ -439,6 +439,10 @@ export function groupPackingDestinations(
   return Array.from(map.values()).sort((a, b) =>
     a.destinationName.localeCompare(b.destinationName),
   );
+}
+
+function arrivesAtHub(item: Pick<Item, 'origin_location' | 'via_meeting'>): boolean {
+  return item.origin_location === EVENT_LOCATION_ID || Boolean(item.via_meeting);
 }
 
 export function missingGamesLabel({ missingCount }: Pick<DestinationGroup, 'missingCount'>): string {
